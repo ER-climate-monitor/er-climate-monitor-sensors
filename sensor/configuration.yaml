@@ -1,0 +1,12 @@
+sensor:
+  information:
+    name: "Gambettola Water Sensor"
+    port: 1926
+    endpoint: "address"
+  apiGateway:
+    url: "localhost"
+    port: 4001
+  cronjob:
+    day_of_week: "0-6"
+    hour: "*"
+    minute: "30"
