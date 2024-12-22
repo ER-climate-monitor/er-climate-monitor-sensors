@@ -3,6 +3,7 @@ sensor:
     name: "Gambettola Water Sensor"
     port: 1926
     endpoint: "address"
+    description: "General Sensor Description"
   apiGateway:
     url: "localhost"
     port: 4001
