@@ -10,9 +10,16 @@ yaml_file = yaml.safe_load(configuration_content)
 values = defaultdict(str)
 print("Now We have to create the map key-value, used for the template replacing.")
 
+def check_for_node(key_name: str, node):
+    if type(node) == int and node < 0:
+        raise ValueError(f"Information at: {key_name} can not be negative, fix this error.")
+    elif type(node) == str and (len(node) == 0 or len(node.replace(" ", "")) == 0):
+        raise ValueError(f"String type information at: {key_name} can not be null and It should contain at least one char")
+    return node
+
 def dfs(key, node):
     if type(node) != dict or len(node) == 0:
-        values[key] = node if type(node) != str else node.replace(" ", "")
+        values[key] = check_for_node(key, node)
         print(f"Key: {key}, Value: {node}")
         return
     for name in node.keys():
