@@ -10,6 +10,7 @@ import json
 
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
+description = "{{ SENSOR_INFORMATION_DESCRIPTION }}"
 port = {{ SENSOR_INFORMATION_PORT}}
 
 
@@ -108,11 +109,16 @@ def health(response: Response) -> Response:
 @app.get("/info")
 def info(response: Response) -> Response:
     log("Returning Sensor information")
+    key = "General Sensor Information"
     message: dict[str, list] = defaultdict(list)
-    message["General Sensor Information"].append({"Sensor Name" : name})
-    message["General Sensor Information"].append({"Endpoint Information" : endpoint_information})
-    message["General Sensor Information"].append({"Cronjob Information": cron_info})
-    return Response(content=json.dumps(message))
+    message[key].append({"Sensor Name" : name})
+    message[key].append({"Description": description})
+    message[key].append({"Endpoint Information" : endpoint_information})
+    message[key].append({"Cronjob Information": cron_info})
+    
+    response: Response = Response(content=json.dumps(message))
+    response.headers["Content-Type"] = "application/json"
+    return response
     
 
 if __name__ == "__main__":
