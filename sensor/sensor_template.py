@@ -1,4 +1,6 @@
 import requests
+import os
+import signal
 import datetime
 from fastapi import FastAPI, Response, status
 from collections import defaultdict
@@ -119,7 +121,16 @@ def info(response: Response) -> Response:
     response: Response = Response(content=json.dumps(message))
     response.headers["Content-Type"] = "application/json"
     return response
-    
+
+@app.delete("/shutoff")
+def shutoff(response: Response) -> Response:
+    log("Shutting off the sensor") 
+    try:
+        log("Return OK to the client")
+        return Response(status_code=200, content='Server shutting down...')
+    finally:
+        log("exiting...")
+        os.kill(os.getpid(), signal.SIGTERM)
 
 if __name__ == "__main__":
     config_scheduler()
