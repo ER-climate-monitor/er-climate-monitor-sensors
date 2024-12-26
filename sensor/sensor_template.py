@@ -1,6 +1,8 @@
 import requests
+import sys
 import os
 import signal
+import time
 import datetime
 from fastapi import FastAPI, Response, status
 from collections import defaultdict
@@ -13,14 +15,18 @@ import json
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
 description = "{{ SENSOR_INFORMATION_DESCRIPTION }}"
-port = {{ SENSOR_INFORMATION_PORT}}
+ip = "{{  SENSOR_ETHERNET_IP }}"
+port = {{ SENSOR_ETHERNET_PORT }}
+
+registry = "{{ SENSOR_REGISTRY_URL }}"
+apikey = "{{ SENSOR_REGISTRY_KEY }}"
 
 
 # API Gateway information
 endpoint_information = {
-    "endpoint_url": "{{ SENSOR_APIGATEWAY_URL}}",
+    "endpoint_url": "{{ SENSOR_APIGATEWAY_URL }}",
     "endpoint_port": {{ SENSOR_APIGATEWAY_PORT }},
-    "endpoint": "http://{{ SENSOR_APIGATEWAY_URL}}:{{ SENSOR_APIGATEWAY_PORT }}"
+    "endpoint": "http://{{ SENSOR_APIGATEWAY_URL }}:{{ SENSOR_APIGATEWAY_PORT }}"
 }
 # Cron task configuration
 cron_info = {
@@ -31,7 +37,7 @@ cron_info = {
 MONDAY, SUNDAY = 0, 6
 MIN_HOUR, MAX_HOUR, MIN_MINUTE, MAX_MINUTE = 0, 23, 0, 59
 
-data_endpoint_url = "{{ SENSOR_INFORMATION_ENDPOINT }}"
+data_endpoint_url = "{{ SENSOR_ENDPOINT_URL }}"
 
 app = FastAPI()
 scheduler = BackgroundScheduler()
@@ -41,6 +47,30 @@ def log(message: str):
 
 def clear_data(input_json_data: dict):
     return input_json_data
+
+def register_sensor() -> None:
+    log("Register the Sensor")
+    attempts = 10
+    time_to_wait = 5
+    for _ in range(attempts):
+        try:
+            response: Response = requests.post(url=registry, json={
+                "X-Sensor-Ip": ip,
+                "X-Sensor-Port": port,
+                "X-Api-Key": apikey
+            })
+            log(response)
+            if response.status_code == status.HTTP_201_CREATED:
+                log("Registered.")
+                return 
+            time.sleep(time_to_wait)
+        except requests.exceptions.ConnectionError as error:
+            log("Failed to connect, retrying in 5 seconds")
+            time.sleep(time_to_wait)
+    log("Failed to connect. exiting...")
+    sys.exit(1)
+            
+        
 
 def sense_data():
     log("Sensing the data")
@@ -137,4 +167,7 @@ def shutoff(response: Response) -> Response:
 
 if __name__ == "__main__":
     config_scheduler()
-    uvicorn.run(app, host="localhost", port=port)
+    register_sensor()
+    # register the sensor to the MAIN system
+    # start the sensor server
+    uvicorn.run(app, host=ip, port=port)
