@@ -85,9 +85,11 @@ def update_sensor_name(response: Response, new_name: str = name) -> Response:
     
 
 @app.put("/sensor/configuration/cron/days")
-def update_sensor_date(response: Response, from_day: int = MONDAY, to_date: int = SUNDAY) -> Response:
-    if MONDAY <= from_day <= to_date and to_date <= SUNDAY:
+def update_sensor_date(response: Response, from_day: int = MONDAY, to_day: int = SUNDAY) -> Response:
+    log(f"from: {from_day}, to:{to_day}")
+    if MONDAY <= from_day <= to_day and to_day <= SUNDAY:
         log("Received a request to update the Sensor's days of work")
+        cron_info["day_of_the_week"] = f"{from_day}-{to_day}"
         config_scheduler()
         return Response()
     else:
