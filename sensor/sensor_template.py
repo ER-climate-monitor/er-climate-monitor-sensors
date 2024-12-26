@@ -76,7 +76,7 @@ def config_scheduler() -> None:
 @app.put("/sensor/update/name/{new_name}")
 def update_sensor_name(response: Response, new_name: str = name) -> Response:
     log("Received a request to update the Sensor's name")
-    if new_name:
+    if new_name and len(new_name.replace(" ", "")) > 0:
         global name
         name = new_name.replace(" ", "")
         return Response()
@@ -86,7 +86,6 @@ def update_sensor_name(response: Response, new_name: str = name) -> Response:
 
 @app.put("/sensor/configuration/cron/days")
 def update_sensor_date(response: Response, from_day: int = MONDAY, to_day: int = SUNDAY) -> Response:
-    log(f"from: {from_day}, to:{to_day}")
     if MONDAY <= from_day <= to_day and to_day <= SUNDAY:
         log("Received a request to update the Sensor's days of work")
         cron_info["day_of_the_week"] = f"{from_day}-{to_day}"
@@ -99,6 +98,8 @@ def update_sensor_date(response: Response, from_day: int = MONDAY, to_day: int =
 def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = MIN_MINUTE) -> Response:
     if MIN_HOUR <= hour <= MAX_HOUR and MIN_MINUTE <= minute <= MAX_MINUTE:
         log("Received a new request to update the Sensor's time of work")
+        cron_info["hour"] = f"{hour}"
+        cron_info["minute"] = f"{minute}"
         config_scheduler()
         response = Response()
     else:
