@@ -60,12 +60,13 @@ def register_sensor() -> None:
                 "X-Api-Key": apikey
             })
             log(response)
+            response.raise_for_status()
             if response.status_code == status.HTTP_201_CREATED:
                 log("Registered.")
                 return 
             time.sleep(time_to_wait)
-        except requests.exceptions.ConnectionError as error:
-            log("Failed to connect, retrying in 5 seconds")
+        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError)  as error:
+            log(f"Error: {repr(error)}, retrying in 5 seconds")
             time.sleep(time_to_wait)
     log("Failed to connect. exiting...")
     sys.exit(1)
