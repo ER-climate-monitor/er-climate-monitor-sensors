@@ -25,8 +25,7 @@ apikey = "{{ SENSOR_REGISTRY_KEY }}"
 # API Gateway information
 endpoint_information = {
     "endpoint_url": "{{ SENSOR_APIGATEWAY_URL }}",
-    "endpoint_port": {{ SENSOR_APIGATEWAY_PORT }},
-    "endpoint": "http://{{ SENSOR_APIGATEWAY_URL }}:{{ SENSOR_APIGATEWAY_PORT }}"
+    "endpoint_port": {{ SENSOR_APIGATEWAY_PORT }}
 }
 # Cron task configuration
 cron_info = {
@@ -85,7 +84,8 @@ def send_data_to_endpoint():
     try:
         log("Prepare to send the send the data to the API gateway")
         data = sense_data()
-        requests.post(url=endpoint_information["endpoint"], json=data)
+        url = f"http://{endpoint_information['endpoint_url']}:{endpoint_information['endpoint_port']}"
+        requests.post(url=url, json=data)
         log("Data sent to the API gateway")
     except (ValueError, requests.exceptions.JSONDecodeError) as error:
         log(f"An error occurred -> {repr(error)}")
@@ -136,6 +136,13 @@ def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = M
     else:
         response = Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: The input hours must be in [0, 23] and minutes in [0, 59]")
     return response
+
+@app.put("/sensor/configuration/gateway/url")
+def update_sensor_gateway_url(response: Response, new_url: str = endpoint_information['endpoint_url']) -> Response:
+    if len(new_url) > 0 and len(new_url.replace(' ', '')) > 0:
+        log("Received a new request to update the Sensor's gateway url")
+        endpoint_information['endpoint_url']
+        
 
 @app.get("/health")
 def health(response: Response) -> Response:
