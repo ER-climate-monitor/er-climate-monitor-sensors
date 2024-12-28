@@ -141,7 +141,10 @@ def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = M
 def update_sensor_gateway_url(response: Response, new_url: str = endpoint_information['endpoint_url']) -> Response:
     if len(new_url) > 0 and len(new_url.replace(' ', '')) > 0:
         log("Received a new request to update the Sensor's gateway url")
-        endpoint_information['endpoint_url']
+        endpoint_information['endpoint_url'] = new_url
+        return Response()
+    else:
+        return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
         
 
 @app.get("/health")
