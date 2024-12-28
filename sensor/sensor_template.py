@@ -23,9 +23,9 @@ apikey = "{{ SENSOR_REGISTRY_KEY }}"
 
 
 # API Gateway information
-endpoint_information = {
-    "endpoint_url": "{{ SENSOR_APIGATEWAY_URL }}",
-    "endpoint_port": {{ SENSOR_APIGATEWAY_PORT }}
+api_gatewat_info = {
+    "url": "{{ SENSOR_APIGATEWAY_URL }}",
+    "port": {{ SENSOR_APIGATEWAY_PORT }}
 }
 # Cron task configuration
 cron_info = {
@@ -35,6 +35,7 @@ cron_info = {
 }
 MONDAY, SUNDAY = 0, 6
 MIN_HOUR, MAX_HOUR, MIN_MINUTE, MAX_MINUTE = 0, 23, 0, 59
+MAX_PORT = 65_535
 
 data_endpoint_url = "{{ SENSOR_ENDPOINT_URL }}"
 
@@ -84,7 +85,7 @@ def send_data_to_endpoint():
     try:
         log("Prepare to send the send the data to the API gateway")
         data = sense_data()
-        url = f"http://{endpoint_information['endpoint_url']}:{endpoint_information['endpoint_port']}"
+        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}"
         requests.post(url=url, json=data)
         log("Data sent to the API gateway")
     except (ValueError, requests.exceptions.JSONDecodeError) as error:
@@ -138,14 +139,24 @@ def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = M
     return response
 
 @app.put("/sensor/configuration/gateway/url")
-def update_sensor_gateway_url(response: Response, new_url: str = endpoint_information['endpoint_url']) -> Response:
+def update_sensor_gateway_url(response: Response, new_url: str = api_gatewat_info['url']) -> Response:
     if len(new_url) > 0 and len(new_url.replace(' ', '')) > 0:
         log("Received a new request to update the Sensor's gateway url")
-        endpoint_information['endpoint_url'] = new_url
+        api_gatewat_info['url'] = new_url
         return Response()
     else:
         return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
-        
+
+@app.put("/sensor/configuration/gateway/port")
+def update_sensor_gateway_url(response: Response, port: int = api_gatewat_info['port']) -> Response:
+    if 0 <= port <= MAX_PORT:
+        log("Received a new request to update the Sensor's gateway url")
+        api_gatewat_info['port'] = port
+        return Response()
+    else:
+        return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
+
+
 
 @app.get("/health")
 def health(response: Response) -> Response:
@@ -159,7 +170,7 @@ def info(response: Response) -> Response:
     message: dict[str, list] = defaultdict(list)
     message[key].append({"Sensor Name" : name})
     message[key].append({"Description": description})
-    message[key].append({"Endpoint Information" : endpoint_information})
+    message[key].append({"Endpoint Information" : api_gatewat_info})
     message[key].append({"Cronjob Information": cron_info})
     
     response: Response = Response(content=json.dumps(message))
