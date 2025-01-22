@@ -54,10 +54,10 @@ def register_sensor() -> None:
     time_to_wait = 5
     for _ in range(attempts):
         try:
-            response: Response = requests.post(url=registry, json={
-                "X-Sensor-Ip": ip,
-                "X-Sensor-Port": port,
-                "X-Api-Key": apikey
+            response: Response = requests.post(url=registry, headers={'apiKey': apikey}, json={
+                "sensorIp": ip,
+                "sensorName": name,
+                "sensorPort": port,
             })
             log(response)
             response.raise_for_status()
