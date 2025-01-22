@@ -177,9 +177,9 @@ def info(response: Response) -> Response:
     response.headers["Content-Type"] = "application/json"
     return response
 
-@app.delete("/shutoff")
+@app.delete("/shutdown")
 def shutoff(response: Response) -> Response:
-    log("Shutting off the sensor") 
+    log("Shutting down the sensor") 
     try:
         log("Return OK to the client")
         return Response(status_code=200, content='Server shutting down...')
