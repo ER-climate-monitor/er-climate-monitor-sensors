@@ -8,8 +8,8 @@ sensor:
   endpoint:
     url: "address"
   registry:
-    url: "http://127.0.0.1:8888/sensor/register"
-    key: "somesecret"
+    url: "http://127.0.0.1:7777/v0/sensor/register"
+    key: "secretKey"
   apiGateway:
     url: "endpoint that receives my data"
     port: 4001
