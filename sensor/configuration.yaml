@@ -8,7 +8,9 @@ sensor:
   endpoint:
     url: "address"
   registry:
-    url: "http://127.0.0.1:7777/v0/sensor/register"
+    url: "http://127.0.0.1:7777/v0/sensor"
+    registerPath: '/register'
+    shutDownPath: '/shutdown'
     key: "secretKey"
   apiGateway:
     url: "endpoint that receives my data"
