@@ -1,4 +1,5 @@
 import requests
+import signal
 import sys
 import re
 import os
@@ -21,6 +22,9 @@ port = {{ SENSOR_ETHERNET_PORT }}
 
 registry = "{{ SENSOR_REGISTRY_URL }}"
 apikey = "{{ SENSOR_REGISTRY_KEY }}"
+registerPath = "{{ SENSOR_REGISTRY_REGISTERPATH }}"
+shutdownPath = "{{ SENSOR_REGISTRY_SHUTDOWNPATH }}"
+
 
 
 # API Gateway information
@@ -43,6 +47,12 @@ data_endpoint_url = "{{ SENSOR_ENDPOINT_URL }}"
 app = FastAPI()
 scheduler = BackgroundScheduler()
 
+
+def shutdown_handler(signum, frame):
+    log("Graceful shutdown triggered...")
+    requests.delete(url=registry + shutdownPath, params={"sensorIp": ip, "sensorPort" :port}, headers={"x-api-key": apikey})
+    sys.exit(0)
+
 def log(message: str):
     print(f"[{datetime.datetime.now()}]: {message}.")
 
@@ -55,7 +65,7 @@ def register_sensor() -> None:
     time_to_wait = 5
     for _ in range(attempts):
         try:
-            response: Response = requests.post(url=registry, headers={'x-api-key': apikey}, json={
+            response: Response = requests.post(url=registry + registerPath, headers={'x-api-key': apikey}, json={
                 "sensorIp": ip,
                 "sensorName": name,
                 "sensorPort": port,
@@ -160,7 +170,6 @@ def update_sensor_gateway_url(response: Response, port: int = api_gatewat_info['
         return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
 
 
-
 @app.get("/health")
 def health(response: Response) -> Response:
     log("Server pinged")
@@ -193,6 +202,7 @@ def shutoff(response: Response) -> Response:
 if __name__ == "__main__":
     config_scheduler()
     register_sensor()
+    signal.signal(signal.SIGINT, shutdown_handler)
     # register the sensor to the MAIN system
     # start the sensor server
     uvicorn.run(app, host=ip, port=port)
