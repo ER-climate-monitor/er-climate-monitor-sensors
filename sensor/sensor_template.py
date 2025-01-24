@@ -1,5 +1,6 @@
 import requests
 import sys
+import re
 import os
 import signal
 import time
@@ -10,7 +11,7 @@ import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 import json
 
-
+cronjob_days_pattern = r"^([0-6])-([0-6])$"
 
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
@@ -54,7 +55,7 @@ def register_sensor() -> None:
     time_to_wait = 5
     for _ in range(attempts):
         try:
-            response: Response = requests.post(url=registry, headers={'apiKey': apikey}, json={
+            response: Response = requests.post(url=registry, headers={'x-api-key': apikey}, json={
                 "sensorIp": ip,
                 "sensorName": name,
                 "sensorPort": port,
@@ -70,8 +71,6 @@ def register_sensor() -> None:
             time.sleep(time_to_wait)
     log("Failed to connect. exiting...")
     sys.exit(1)
-            
-        
 
 def sense_data():
     log("Sensing the data")
@@ -119,10 +118,12 @@ async def update_sensor_name(request: Request, response: Response) -> Response:
     
 
 @app.put("/sensor/configuration/cron/days")
-def update_sensor_date(response: Response, from_day: int = MONDAY, to_day: int = SUNDAY) -> Response:
-    if MONDAY <= from_day <= to_day and to_day <= SUNDAY:
-        log("Received a request to update the Sensor's days of work")
-        cron_info["day_of_the_week"] = f"{from_day}-{to_day}"
+async def update_sensor_date(request: Request, response: Response) -> Response:
+    days: str = (await request.json())['sensorCronJobDays']
+    match = re.match(cronjob_days_pattern, days)
+    if match and int(match.group(1) <= match.group(2)):
+        log("Received a request to update the Sensor's days of work with: " + days)
+        cron_info["day_of_the_week"] = f"{days}"
         config_scheduler()
         return Response()
     else:
