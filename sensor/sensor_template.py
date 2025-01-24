@@ -4,7 +4,7 @@ import os
 import signal
 import time
 import datetime
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Request
 from collections import defaultdict
 import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -105,9 +105,11 @@ def config_scheduler() -> None:
     scheduler.start()
 
 
-@app.put("/sensor/update/name/{new_name}")
-def update_sensor_name(response: Response, new_name: str = name) -> Response:
+@app.put("/sensor/update/name")
+async def update_sensor_name(request: Request, response: Response) -> Response:
     log("Received a request to update the Sensor's name")
+    new_name: str = (await request.json())['sensorName']
+    print(new_name)
     if new_name and len(new_name.replace(" ", "")) > 0:
         global name
         name = new_name.replace(" ", "")
