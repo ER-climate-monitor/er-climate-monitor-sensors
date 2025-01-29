@@ -140,7 +140,11 @@ async def update_sensor_date(request: Request, response: Response) -> Response:
         return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: The input days must be in [0, 6]")
 
 @app.put("/sensor/configuration/cron/time")
-def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = MIN_MINUTE) -> Response:
+async def update_sensor_time(request: Request, response: Response) -> Response:
+    data = (await request.json())
+    hour: int = int(data['sensorCronJobTimeHour'])
+    minute: int = int(data['sensorCronJobTimeMinute'])
+    log(data)
     if MIN_HOUR <= hour <= MAX_HOUR and MIN_MINUTE <= minute <= MAX_MINUTE:
         log("Received a new request to update the Sensor's time of work")
         cron_info["hour"] = f"{hour}"
