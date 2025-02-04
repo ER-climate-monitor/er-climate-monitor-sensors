@@ -1,10 +1,19 @@
 sensor:
   information:
     name: "Gambettola Water Sensor"
+    description: "General Sensor Description"
+  ethernet:
     port: 1926
-    endpoint: "address"
+    ip: "0.0.0.0"
+  endpoint:
+    url: "address"
+  registry:
+    url: "http://127.0.0.1:7777/v0/sensor"
+    registerPath: '/register'
+    shutDownPath: '/shutdown'
+    key: "secretKey"
   apiGateway:
-    url: "localhost"
+    url: "endpoint that receives my data"
     port: 4001
   cronjob:
     day_of_week: "0-6"

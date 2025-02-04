@@ -1,23 +1,36 @@
 import requests
+import signal
+import sys
+import re
+import os
+import signal
+import time
 import datetime
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Request
 from collections import defaultdict
 import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 import json
 
-
+cronjob_days_pattern = r"^([0-6])-([0-6])$"
 
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
-port = {{ SENSOR_INFORMATION_PORT}}
+description = "{{ SENSOR_INFORMATION_DESCRIPTION }}"
+ip = "{{  SENSOR_ETHERNET_IP }}"
+port = {{ SENSOR_ETHERNET_PORT }}
+
+registry = "{{ SENSOR_REGISTRY_URL }}"
+apikey = "{{ SENSOR_REGISTRY_KEY }}"
+registerPath = "{{ SENSOR_REGISTRY_REGISTERPATH }}"
+shutdownPath = "{{ SENSOR_REGISTRY_SHUTDOWNPATH }}"
+
 
 
 # API Gateway information
-endpoint_information = {
-    "endpoint_url": "{{ SENSOR_APIGATEWAY_URL}}",
-    "endpoint_port": {{ SENSOR_APIGATEWAY_PORT }},
-    "endpoint": "http://{{ SENSOR_APIGATEWAY_URL}}:{{ SENSOR_APIGATEWAY_PORT }}"
+api_gatewat_info = {
+    "url": "{{ SENSOR_APIGATEWAY_URL }}",
+    "port": {{ SENSOR_APIGATEWAY_PORT }}
 }
 # Cron task configuration
 cron_info = {
@@ -27,17 +40,47 @@ cron_info = {
 }
 MONDAY, SUNDAY = 0, 6
 MIN_HOUR, MAX_HOUR, MIN_MINUTE, MAX_MINUTE = 0, 23, 0, 59
+MAX_PORT = 65_535
 
-data_endpoint_url = "{{ SENSOR_INFORMATION_ENDPOINT }}"
+data_endpoint_url = "{{ SENSOR_ENDPOINT_URL }}"
 
 app = FastAPI()
 scheduler = BackgroundScheduler()
+
+
+def shutdown_handler(signum, frame):
+    log("Graceful shutdown triggered...")
+    requests.delete(url=registry + shutdownPath, params={"sensorIp": ip, "sensorPort" :port}, headers={"x-api-key": apikey})
+    sys.exit(0)
 
 def log(message: str):
     print(f"[{datetime.datetime.now()}]: {message}.")
 
 def clear_data(input_json_data: dict):
     return input_json_data
+
+def register_sensor() -> None:
+    log("Register the Sensor")
+    attempts = 10
+    time_to_wait = 5
+    for _ in range(attempts):
+        try:
+            response: Response = requests.post(url=registry + registerPath, headers={'x-api-key': apikey}, json={
+                "sensorIp": ip,
+                "sensorName": name,
+                "sensorPort": port,
+            })
+            log(response)
+            response.raise_for_status()
+            if response.status_code == status.HTTP_201_CREATED:
+                log("Registered.")
+                return 
+            time.sleep(time_to_wait)
+        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError)  as error:
+            log(f"Error: {repr(error)}, retrying in 5 seconds")
+            time.sleep(time_to_wait)
+    log("Failed to connect. exiting...")
+    sys.exit(1)
 
 def sense_data():
     log("Sensing the data")
@@ -51,7 +94,8 @@ def send_data_to_endpoint():
     try:
         log("Prepare to send the send the data to the API gateway")
         data = sense_data()
-        requests.post(url=endpoint_information["endpoint"], json=data)
+        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}"
+        requests.post(url=url, json=data)
         log("Data sent to the API gateway")
     except (ValueError, requests.exceptions.JSONDecodeError) as error:
         log(f"An error occurred -> {repr(error)}")
@@ -70,10 +114,12 @@ def config_scheduler() -> None:
     scheduler.start()
 
 
-@app.put("/sensor/update/name/{new_name}")
-def update_sensor_name(response: Response, new_name: str = name) -> Response:
+@app.put("/sensor/update/name")
+async def update_sensor_name(request: Request, response: Response) -> Response:
     log("Received a request to update the Sensor's name")
-    if new_name:
+    new_name: str = (await request.json())['sensorName']
+    print(new_name)
+    if new_name and len(new_name.replace(" ", "")) > 0:
         global name
         name = new_name.replace(" ", "")
         return Response()
@@ -82,23 +128,51 @@ def update_sensor_name(response: Response, new_name: str = name) -> Response:
     
 
 @app.put("/sensor/configuration/cron/days")
-def update_sensor_date(response: Response, from_day: int = MONDAY, to_date: int = SUNDAY) -> Response:
-    if MONDAY <= from_day <= to_date and to_date <= SUNDAY:
-        log("Received a request to update the Sensor's days of work")
+async def update_sensor_date(request: Request, response: Response) -> Response:
+    days: str = (await request.json())['sensorCronJobDays']
+    match = re.match(cronjob_days_pattern, days)
+    if match and int(match.group(1) <= match.group(2)):
+        log("Received a request to update the Sensor's days of work with: " + days)
+        cron_info["day_of_the_week"] = f"{days}"
         config_scheduler()
         return Response()
     else:
         return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: The input days must be in [0, 6]")
 
 @app.put("/sensor/configuration/cron/time")
-def update_sensor_time(response: Response, hour: int = MIN_HOUR, minute: int = MIN_MINUTE) -> Response:
+async def update_sensor_time(request: Request, response: Response) -> Response:
+    data = (await request.json())
+    hour: int = int(data['sensorCronJobTimeHour'])
+    minute: int = int(data['sensorCronJobTimeMinute'])
+    log(data)
     if MIN_HOUR <= hour <= MAX_HOUR and MIN_MINUTE <= minute <= MAX_MINUTE:
         log("Received a new request to update the Sensor's time of work")
+        cron_info["hour"] = f"{hour}"
+        cron_info["minute"] = f"{minute}"
         config_scheduler()
         response = Response()
     else:
         response = Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: The input hours must be in [0, 23] and minutes in [0, 59]")
     return response
+
+@app.put("/sensor/configuration/gateway/url")
+def update_sensor_gateway_url(response: Response, new_url: str = api_gatewat_info['url']) -> Response:
+    if len(new_url) > 0 and len(new_url.replace(' ', '')) > 0:
+        log("Received a new request to update the Sensor's gateway url")
+        api_gatewat_info['url'] = new_url
+        return Response()
+    else:
+        return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
+
+@app.put("/sensor/configuration/gateway/port")
+def update_sensor_gateway_url(response: Response, port: int = api_gatewat_info['port']) -> Response:
+    if 0 <= port <= MAX_PORT:
+        log("Received a new request to update the Sensor's gateway url")
+        api_gatewat_info['port'] = port
+        return Response()
+    else:
+        return Response(status_code=status.HTTP_406_NOT_ACCEPTABLE, content="Error: the gateway url should be non empty and should not contains only withe spaces")
+
 
 @app.get("/health")
 def health(response: Response) -> Response:
@@ -108,13 +182,31 @@ def health(response: Response) -> Response:
 @app.get("/info")
 def info(response: Response) -> Response:
     log("Returning Sensor information")
+    key = "General Sensor Information"
     message: dict[str, list] = defaultdict(list)
-    message["General Sensor Information"].append({"Sensor Name" : name})
-    message["General Sensor Information"].append({"Endpoint Information" : endpoint_information})
-    message["General Sensor Information"].append({"Cronjob Information": cron_info})
-    return Response(content=json.dumps(message))
+    message[key].append({"Sensor Name" : name})
+    message[key].append({"Description": description})
+    message[key].append({"Endpoint Information" : api_gatewat_info})
+    message[key].append({"Cronjob Information": cron_info})
     
+    response: Response = Response(content=json.dumps(message))
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+@app.delete("/shutdown")
+def shutoff(response: Response) -> Response:
+    log("Shutting down the sensor") 
+    try:
+        log("Return OK to the client")
+        return Response(status_code=200, content='Server shutting down...')
+    finally:
+        log("exiting...")
+        os.kill(os.getpid(), signal.SIGTERM)
 
 if __name__ == "__main__":
     config_scheduler()
-    uvicorn.run(app, host="localhost", port=port)
+    register_sensor()
+    signal.signal(signal.SIGINT, shutdown_handler)
+    # register the sensor to the MAIN system
+    # start the sensor server
+    uvicorn.run(app, host=ip, port=port)
