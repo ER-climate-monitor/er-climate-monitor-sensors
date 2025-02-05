@@ -97,23 +97,22 @@ def sense_data() -> GenericDetection | None:
 def send_data_to_endpoint():
     try:
         log("Prepare to send the send the data to the API gateway")
-        data = sense_data()
-        if data is None:
+        raw_data = sense_data()
+        if raw_data is None:
             log("Cannot retrieve data, scraper scraped nothing!")
             return
 
-        data = data.to_json()
+        data = raw_data.to_json()
         url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/api/detection"
 
         if data['isAlert'] and bool(data['isAlert']):
             requests.post(url=url + '/alerts', json=data['detection'])
             log("Alert sent to the API gateway")
-            return
 
-        data = data['detection']
+        data = raw_data.to_json_detection()
         url = f"{url}/{type}/{data['sensorName']}/detections"
-
         requests.post(url=url, json=data)
+
         log("Data sent to the API gateway")
     except (ValueError, requests.exceptions.JSONDecodeError) as error:
         log(f"An error occurred -> {repr(error)}")

@@ -87,6 +87,17 @@ class GenericDetection:
             },
         }
 
+    def to_json_detection(self) -> dict:
+        return {
+            "sensorId": self.sensorId,
+            "sensorName": self.sensorName,
+            "unit": self.unit,
+            "timestamp": self.timestamp,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            "value": self.value,
+        }
+
     def __is_alert(self) -> tuple[str, int] | None:
         if self.value is None:
             return None
