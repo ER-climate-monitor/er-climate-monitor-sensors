@@ -1,6 +1,6 @@
 sensor:
   information:
-    name: "Gambettola Water Sensor"
+    name: "Diga di Ridracoli"
     description: "General Sensor Description"
     type: "idro_level"
     queries:
@@ -8,7 +8,7 @@ sensor:
       - "soglia2"
       - "soglia3"
   ethernet:
-    port: 1926
+    port: 11989
     ip: "0.0.0.0"
   registry:
     url: "http://127.0.0.1:3000/v0/api/sensor"
@@ -16,8 +16,8 @@ sensor:
     shutDownPath: '/shutdown'
     key: "secretKey"
   apiGateway:
-    url: "endpoint that receives my data"
-    port: 4001
+    url: "localhost"
+    port: 3000
   cronjob:
     day_of_week: "0-6"
     hour: "*"
