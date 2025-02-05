@@ -12,11 +12,19 @@ import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 import json
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from scrapers.GenericScraper import GenericScraper, GenericDetection
+
+
 cronjob_days_pattern = r"^([0-6])-([0-6])$"
 
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
+type = "{{ SENSOR_INFORMATION_TYPE }}"
 description = "{{ SENSOR_INFORMATION_DESCRIPTION }}"
+queries = {{ SENSOR_INFORMATION_QUERIES }}
+
 ip = "{{  SENSOR_ETHERNET_IP }}"
 port = {{ SENSOR_ETHERNET_PORT }}
 
@@ -24,8 +32,6 @@ registry = "{{ SENSOR_REGISTRY_URL }}"
 apikey = "{{ SENSOR_REGISTRY_KEY }}"
 registerPath = "{{ SENSOR_REGISTRY_REGISTERPATH }}"
 shutdownPath = "{{ SENSOR_REGISTRY_SHUTDOWNPATH }}"
-
-
 
 # API Gateway information
 api_gatewat_info = {
@@ -42,7 +48,7 @@ MONDAY, SUNDAY = 0, 6
 MIN_HOUR, MAX_HOUR, MIN_MINUTE, MAX_MINUTE = 0, 23, 0, 59
 MAX_PORT = 65_535
 
-data_endpoint_url = "{{ SENSOR_ENDPOINT_URL }}"
+scraper = GenericScraper(type)
 
 app = FastAPI()
 scheduler = BackgroundScheduler()
@@ -69,6 +75,8 @@ def register_sensor() -> None:
                 "sensorIp": ip,
                 "sensorName": name,
                 "sensorPort": port,
+                "sensorType": type,
+                "sensorQueries": queries,
             })
             log(response)
             response.raise_for_status()
@@ -82,26 +90,36 @@ def register_sensor() -> None:
     log("Failed to connect. exiting...")
     sys.exit(1)
 
-def sense_data():
+def sense_data() -> GenericDetection | None:
     log("Sensing the data")
-    response: Response = requests.get(data_endpoint_url)
-    if response.status_code == status.HTTP_200_OK:
-        return clear_data(response.json())
-    else:
-        raise ValueError(f"The Status code is different from {status.HTTP_200_OK}, something went wrong.")
+    return scraper.get_detection_for_sensor(name)
 
 def send_data_to_endpoint():
     try:
         log("Prepare to send the send the data to the API gateway")
         data = sense_data()
-        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}"
+        if data is None:
+            log("Cannot retrieve data, scraper scraped nothing!")
+            return
+
+        data = data.to_json()
+        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/sensor"
+
+        if data['isAlert'] and bool(data['isAlert']):
+            requests.post(url=url + '/alerts', json=data['detection'])
+            log("Alert sent to the API gateway")
+            return
+
+        data = data['detection']
+        url = f"{url}/{type}/{data['sensorName']}/detections"
+
         requests.post(url=url, json=data)
         log("Data sent to the API gateway")
     except (ValueError, requests.exceptions.JSONDecodeError) as error:
         log(f"An error occurred -> {repr(error)}")
 
 def config_scheduler() -> None:
-    log(f"Configuring the scheduler with the following infomrations: Day: {cron_info["day_of_the_week"]}, Hour: {cron_info["hour"]}, Minute: {cron_info["minute"]}")
+    log(f"Configuring the scheduler with the following infomrations: Day: {cron_info['day_of_the_week']}, Hour: {cron_info['hour']}, Minute: {cron_info['minute']}")
     if scheduler.running:
         scheduler.shutdown()
     scheduler.add_job(send_data_to_endpoint, "cron",

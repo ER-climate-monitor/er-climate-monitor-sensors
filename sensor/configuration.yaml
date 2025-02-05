@@ -2,13 +2,16 @@ sensor:
   information:
     name: "Gambettola Water Sensor"
     description: "General Sensor Description"
+    type: "idro_level"
+    queries:
+      - "soglia1"
+      - "soglia2"
+      - "soglia3"
   ethernet:
     port: 1926
     ip: "0.0.0.0"
-  endpoint:
-    url: "address"
   registry:
-    url: "http://127.0.0.1:7777/v0/sensor"
+    url: "http://127.0.0.1:3000/v0/sensor"
     registerPath: '/register'
     shutDownPath: '/shutdown'
     key: "secretKey"
@@ -18,4 +21,4 @@ sensor:
   cronjob:
     day_of_week: "0-6"
     hour: "*"
-    minute: "30"
+    minute: "1"

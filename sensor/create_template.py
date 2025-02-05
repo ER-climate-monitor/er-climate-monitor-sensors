@@ -31,5 +31,8 @@ with open("sensor_template.py") as file:
 print("Replace all the information inside the template file.")
 template = Template(configuration_content)
 new_content = template.render(**values)
-with open(f"sensor_{values["SENSOR_INFORMATION_NAME"].replace(" ", "")}.py", "w") as file:
+
+sensor_name = values["SENSOR_INFORMATION_NAME"].replace(" ", "")
+with open(f"sensor_{sensor_name}.py", "w") as file:
     file.write(new_content)
+
