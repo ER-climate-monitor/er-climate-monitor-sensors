@@ -103,7 +103,7 @@ def send_data_to_endpoint():
             return
 
         data = data.to_json()
-        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/detection"
+        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/api/detection"
 
         if data['isAlert'] and bool(data['isAlert']):
             requests.post(url=url + '/alerts', json=data['detection'])
@@ -227,4 +227,5 @@ if __name__ == "__main__":
     # signal.signal(signal.SIGINT, shutdown_handler)
     # register the sensor to the MAIN system
     # start the sensor server
+
     uvicorn.run(app, host=ip, port=port)

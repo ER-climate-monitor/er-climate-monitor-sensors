@@ -21,4 +21,4 @@ sensor:
   cronjob:
     day_of_week: "0-6"
     hour: "*"
-    minute: "1"
+    minute: "*"
