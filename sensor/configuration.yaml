@@ -11,7 +11,7 @@ sensor:
     port: 1926
     ip: "0.0.0.0"
   registry:
-    url: "http://127.0.0.1:3000/v0/sensor"
+    url: "http://127.0.0.1:3000/v0/api/sensor"
     registerPath: '/register'
     shutDownPath: '/shutdown'
     key: "secretKey"
