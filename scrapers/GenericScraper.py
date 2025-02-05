@@ -55,41 +55,37 @@ class GenericDetection:
         self.value: int | None = None
         self.queries: list[tuple[str, int]] = []
 
-    def to_json(self) -> str:
+    def to_json(self) -> dict:
         query: tuple[str, int] | None = self.__is_alert()
 
         if query is not None:
-            return json.dumps(
-                {
-                    "isAlert": True,
-                    "detection": {
-                        "sensorName": self.sensorName,
-                        "type": self.sensorType,
-                        "value": self.value,
-                        "unit": self.unit,
-                        "timestamp": self.timestamp,
-                        "query": {
-                            "name": query[0],
-                            "value": query[1],
-                        },
-                    },
-                }
-            )
-
-        return json.dumps(
-            {
-                "isAlert": False,
+            return {
+                "isAlert": True,
                 "detection": {
-                    "sensorId": self.sensorId,
                     "sensorName": self.sensorName,
+                    "type": self.sensorType,
+                    "value": self.value,
                     "unit": self.unit,
                     "timestamp": self.timestamp,
-                    "longitude": self.longitude,
-                    "latitude": self.latitude,
-                    "value": self.value,
+                    "query": {
+                        "name": query[0],
+                        "value": query[1],
+                    },
                 },
             }
-        )
+
+        return {
+            "isAlert": False,
+            "detection": {
+                "sensorId": self.sensorId,
+                "sensorName": self.sensorName,
+                "unit": self.unit,
+                "timestamp": self.timestamp,
+                "longitude": self.longitude,
+                "latitude": self.latitude,
+                "value": self.value,
+            },
+        }
 
     def __is_alert(self) -> tuple[str, int] | None:
         if self.value is None:
@@ -156,7 +152,7 @@ class GenericScraper:
             d.value = detection["value"]
             for name in ["soglia1", "soglia2", "soglia3"]:
                 if name in detection:
-                    d.queries.append((name, detection["name"]))
+                    d.queries.append((name, detection[name]))
             res.append(d)
         return res
 
