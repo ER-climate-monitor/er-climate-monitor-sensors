@@ -103,7 +103,7 @@ def send_data_to_endpoint():
             return
 
         data = data.to_json()
-        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/sensor"
+        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/detection"
 
         if data['isAlert'] and bool(data['isAlert']):
             requests.post(url=url + '/alerts', json=data['detection'])
