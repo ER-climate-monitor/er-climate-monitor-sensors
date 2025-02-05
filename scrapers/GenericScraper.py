@@ -27,11 +27,11 @@ sensor_ids = {
 }
 
 sensors_names = {
-    sensor_ids["RAIN"]: "rain_sensor",
-    sensor_ids["IDRO_LEVEL"]: "idro_level_sensor",
-    sensor_ids["TEMP"]: "temp_sensor",
-    sensor_ids["WIND"]: "wind_sensor",
-    sensor_ids["HUMIDITY"]: "humidity_sensor",
+    sensor_ids["RAIN"]: "rain",
+    sensor_ids["IDRO_LEVEL"]: "idro_level",
+    sensor_ids["TEMP"]: "temp",
+    sensor_ids["WIND"]: "wind",
+    sensor_ids["HUMIDITY"]: "humidity",
 }
 
 sensors_units = {
