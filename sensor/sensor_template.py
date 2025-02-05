@@ -53,8 +53,8 @@ scraper = GenericScraper(type)
 app = FastAPI()
 scheduler = BackgroundScheduler()
 
-
-def shutdown_handler(signum, frame):
+@app.on_event("shutdown")
+def shutdown_handler():
     log("Graceful shutdown triggered...")
     requests.delete(url=registry + shutdownPath, params={"sensorIp": ip, "sensorPort" :port}, headers={"x-api-key": apikey})
     sys.exit(0)
@@ -224,7 +224,7 @@ def shutoff(response: Response) -> Response:
 if __name__ == "__main__":
     config_scheduler()
     register_sensor()
-    signal.signal(signal.SIGINT, shutdown_handler)
+    # signal.signal(signal.SIGINT, shutdown_handler)
     # register the sensor to the MAIN system
     # start the sensor server
     uvicorn.run(app, host=ip, port=port)
