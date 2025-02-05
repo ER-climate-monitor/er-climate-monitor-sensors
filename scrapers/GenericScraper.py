@@ -4,7 +4,7 @@ from datetime import datetime
 
 import requests
 
-from utils.timestamp import TimestampUtils
+from scrapers.utils.timestamp import TimestampUtils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -107,11 +107,11 @@ class GenericScraper:
     def __init__(self, sensor_name: str):
         self.logger = logging.getLogger(str(self.__class__))
 
-        if sensor_name not in sensor_ids:
+        if sensor_name.upper() not in sensor_ids:
             raise KeyError(f"Unrecognized sensor '{sensor_name}'")
 
-        self.selected_sensor_name = sensor_name
-        self.selected_sensor_id: str = sensor_ids[sensor_name]
+        self.selected_sensor_name = sensor_name.upper()
+        self.selected_sensor_id: str = sensor_ids[self.selected_sensor_name]
 
     def scrape(self, dump: bool = False) -> dict:
         now = TimestampUtils().get_compliant_now_timestamp()
