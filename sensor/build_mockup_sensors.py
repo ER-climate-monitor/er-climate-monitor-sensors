@@ -95,7 +95,7 @@ def create_config_files(directory: str):
     logger.info('Creating config file for sensor samples')
     num_sensors = sum(map(lambda x: len(x), selected_sensors.values()))
     print(num_sensors)
-    ips = [ f'192.168.101.{n}' for n in random.sample(range(1, 255), num_sensors) ]
+    ips = [ f'122.178.101.{n}' for n in random.sample(range(1, 255), num_sensors) ]
     ports = random.sample(range(12000, 20000), num_sensors)
 
     i = 0
@@ -112,7 +112,7 @@ def create_config_files(directory: str):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     directory = 'sensors_config'
-    if (not os.path.exists(directory) and not os.listdir(directory)):
+    if (not os.path.exists(directory) or not os.listdir(directory)):
         logger.info(f'Directory: {directory} has not been found or it is empty')
         os.makedirs(directory, exist_ok=True)
         create_config_files(directory)
@@ -126,5 +126,12 @@ if __name__ == "__main__":
             for yaml_file in yaml_files:
                 logger.info(f'Procesing {yaml_file}')
                 subprocess.run(['python3', 'create_template.py', yaml_file], stdout=subprocess.DEVNULL)
+        elif sys.argv[1] == 'clear':
+            logger.info('clearing all generated sensors')
+            all_sensors = [sensor.replace(' ', '') for sensors in selected_sensors.values() for sensor in sensors]
+            files_to_delete = [file for file in os.listdir() if any(sensor in file for sensor in all_sensors) and file != 'sensor_template.py']
+            for file in files_to_delete:
+                os.remove(file)
+            logger.info('Cleanup complete!')
     else:
         logger.info("No <create> option has been provided, doing nothing...")
