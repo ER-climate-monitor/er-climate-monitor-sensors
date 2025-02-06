@@ -174,4 +174,5 @@ class GenericScraper:
 
 
 if __name__ == "__main__":
-    GenericScraper("TEMP").scrape(dump=True)
+    for name in sensors:
+        GenericScraper(name).scrape(dump=True)
