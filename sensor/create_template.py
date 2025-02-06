@@ -40,6 +40,7 @@ template = Template(configuration_content)
 new_content = template.render(**values)
 
 sensor_name = values["SENSOR_INFORMATION_NAME"].replace(" ", "")
-with open(f"sensor_{sensor_name}.py", "w") as file:
+sensor_type = values["SENSOR_INFORMATION_TYPE"]
+with open(f"sensor_{sensor_type}_{sensor_name}.py", "w") as file:
     file.write(new_content)
 
