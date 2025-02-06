@@ -1,10 +1,17 @@
 import yaml
 from jinja2 import Template
 from collections import defaultdict
+import sys
 
-print("Reading the configuration File...")
+if len(sys.argv) != 2:
+    print("Usage: python create_template.py <config_file.yaml>")
+    sys.exit(1)
+
+config_file = sys.argv[1]
+
+print(f"Reading the configuration File: '{config_file}'")
 configuration_content = ""
-with open("configuration.yaml") as file:
+with open(config_file) as file:
     configuration_content = file.read()
 yaml_file = yaml.safe_load(configuration_content)
 values = defaultdict(str)
