@@ -127,9 +127,6 @@ def send_data_to_endpoint():
             log("Alert sent to the API gateway")
 
         data = raw_data.to_json_detection()
-        if type == "temp" and data["unit"] == "K":
-            data["value"] = data["value"] - 273.15
-            data["unit"] = "C"
         url = f"{url}/{type}/{data['sensorName']}/detections"
         requests.post(url=url, json=data)
 
