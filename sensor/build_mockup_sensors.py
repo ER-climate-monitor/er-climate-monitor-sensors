@@ -119,11 +119,12 @@ if __name__ == "__main__":
     else:
         logger.info(f'files in directory {directory} have been already created')
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'create':
-        logger.info('Creating sensors from yaml specifications')
-        yaml_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.yaml')]
-        for yaml_file in yaml_files:
-            logger.info(f'Procesing {yaml_file}')
-            subprocess.run(['python3', 'create_template.py', yaml_file])
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'create':
+            logger.info('Creating sensors from yaml specifications')
+            yaml_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.yaml')]
+            for yaml_file in yaml_files:
+                logger.info(f'Procesing {yaml_file}')
+                subprocess.run(['python3', 'create_template.py', yaml_file], stdout=subprocess.DEVNULL)
     else:
         logger.info("No <create> option has been provided, doing nothing...")
