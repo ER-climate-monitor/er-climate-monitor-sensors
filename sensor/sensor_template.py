@@ -139,11 +139,14 @@ def send_data_to_endpoint():
 
 
 def config_scheduler() -> None:
+    global scheduler
     log(
         f"Configuring the scheduler with the following infomrations: Day: {cron_info['day_of_the_week']}, Hour: {cron_info['hour']}, Minute: {cron_info['minute']}"
     )
     if scheduler.running:
         scheduler.shutdown()
+        scheduler = BackgroundScheduler()
+        
     scheduler.add_job(
         send_data_to_endpoint,
         "cron",
