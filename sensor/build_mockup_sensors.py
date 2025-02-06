@@ -101,9 +101,9 @@ def create_config_files(directory: str):
     i = 0
     for sensor_type, sensor_names in selected_sensors.items():
         for sensor_name in sensor_names:
-            sensor_name = sensor_name.replace(' ', '')
             config = generate_sensor_config(sensor_name, sensor_type, ports[i], '0.0.0.0')
-            output_file = os.path.join(directory, f'sensor_{sensor_type}_{sensor_name}.yaml')
+            formatted_name = sensor_name.replace(' ', '')
+            output_file = os.path.join(directory, f'sensor_{sensor_type}_{formatted_name}.yaml')
             with open(output_file, 'w') as f:
                 yaml.safe_dump(config, f, default_flow_style=False, sort_keys=False)
             logger.info(f"Config for sensor '{sensor_name}' of type {sensor_type} has been created succesfully at: {output_file}")
