@@ -11,12 +11,12 @@ sensor:
     port: 11989
     ip: "0.0.0.0"
   registry:
-    url: "http://127.0.0.1:3000/v0/api/sensor"
+    url: "https://sensor-registry-17633123551.europe-west8.run.app/v0/api/sensor"
     registerPath: '/register'
     shutDownPath: '/shutdown'
     key: "secretKey"
   apiGateway:
-    url: "localhost"
+    url: "api-gateway-17633123551.europe-west8.run.app"
     port: 3000
   cronjob:
     day_of_week: "0-6"
