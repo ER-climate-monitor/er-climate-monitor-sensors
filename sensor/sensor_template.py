@@ -1,3 +1,4 @@
+from scrapers.GenericScraper import GenericScraper, GenericDetection
 import requests
 import signal
 import sys
@@ -13,8 +14,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from scrapers.GenericScraper import GenericScraper, GenericDetection
 
 
 cronjob_days_pattern = r"^([0-6])-([0-6])$"
@@ -120,7 +119,7 @@ def send_data_to_endpoint():
             return
 
         data = raw_data.to_json()
-        url = f"http://{api_gatewat_info['url']}:{api_gatewat_info['port']}/v0/api/detection"
+        url = f"https://{api_gatewat_info['url']}/v0/api/detection"
 
         if data["isAlert"] and bool(data["isAlert"]):
             requests.post(url=url + "/alerts", json=data["detection"])
@@ -138,12 +137,13 @@ def send_data_to_endpoint():
 def config_scheduler() -> None:
     global scheduler
     log(
-        f"Configuring the scheduler with the following infomrations: Day: {cron_info['day_of_the_week']}, Hour: {cron_info['hour']}, Minute: {cron_info['minute']}"
+        f"Configuring the scheduler with the following infomrations: Day: {
+            cron_info['day_of_the_week']}, Hour: {cron_info['hour']}, Minute: {cron_info['minute']}"
     )
     if scheduler.running:
         scheduler.shutdown()
         scheduler = BackgroundScheduler()
-        
+
     scheduler.add_job(
         send_data_to_endpoint,
         "cron",
