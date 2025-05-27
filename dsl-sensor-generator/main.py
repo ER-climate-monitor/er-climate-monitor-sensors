@@ -14,8 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 REPO = "S-furi/er-climate-monitor-dsl"
-RELEASE_VERSION = "v0.2.1"
-JAR_NAME = "sensorDsl-.jar"
+RELEASE_VERSION = "v0.2.3"
+JAR_NAME = f"sensorDsl-{RELEASE_VERSION}.jar"
 IMAGE_VERSION = "1.0.4"
 EDITOR_IMAGE = f"sfuri/er-climate-monitor-dsl-editor:{IMAGE_VERSION}"
 EDITOR_PORT = 8080
