@@ -52,7 +52,7 @@ class Query:
 name = "{{ SENSOR_INFORMATION_NAME }}"
 type = "{{ SENSOR_INFORMATION_TYPE }}"
 description = "{{ SENSOR_INFORMATION_DESCRIPTION }}"
-queries = {{SENSOR_INFORMATION_QUERIES}}
+queries: list[Query] = {{SENSOR_INFORMATION_QUERIES}}
 
 ip = "{{  SENSOR_ETHERNET_IP }}"
 port = {{SENSOR_ETHERNET_PORT}}
@@ -116,7 +116,7 @@ def register_sensor() -> None:
                     "sensorName": name,
                     "sensorPort": port,
                     "sensorType": type,
-                    "sensorQueries": queries,
+                    "sensorQueries": [q.name for q in queries],
                 },
             )
             log(response)
