@@ -76,6 +76,7 @@ class GenericDetection:
 
         return {
             "isAlert": False,
+            "type": self.sensorType,
             "detection": {
                 "sensorId": self.sensorId,
                 "sensorName": self.sensorName,

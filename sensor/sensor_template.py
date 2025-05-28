@@ -1,10 +1,10 @@
+from __future__ import annotations
 from scrapers.GenericScraper import GenericScraper, GenericDetection
 import requests
 import signal
 import sys
 import re
 import os
-import signal
 import time
 import datetime
 from fastapi import FastAPI, Response, status, Request
@@ -17,6 +17,36 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 cronjob_days_pattern = r"^([0-6])-([0-6])$"
+
+class Operator:
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+
+    def test(self, a: int | float, b: int | float) -> bool:
+        if self.symbol == '>':
+            return a > b
+        elif self.symbol == '<':
+            return a < b
+        else:
+            raise RuntimeError("operator symbol not recognized: " + self.symbol)
+
+class Query:
+    def __init__(self, operator_symbol: str, name: str, threshold: int | float):
+        self.operator: Operator = Operator(operator_symbol)
+        self.name = name
+        self.threshold = threshold
+
+    def check(self, value: int | float) -> bool:
+        return self.operator.test(value, self.threshold)
+
+
+    @staticmethod
+    def checkQueries(value: int | float, queries: list[Query])-> Query | None:
+        queries = sorted(queries, key=lambda q: q.threshold, reverse=True)
+        for q in queries:
+            if q.check(value):
+                return q
+        return None
 
 # Sensor configuration
 name = "{{ SENSOR_INFORMATION_NAME }}"
@@ -121,8 +151,28 @@ def send_data_to_endpoint():
         data = raw_data.to_json()
         url = f"https://{api_gatewat_info['url']}/v0/api/detection"
 
+        # Scraper alert check
         if data["isAlert"] and bool(data["isAlert"]):
             requests.post(url=url + "/alerts", json=data["detection"])
+            log("Alert sent to the API gateway")
+
+        # Custom alert check
+        value = float(data["detection"]["value"])
+        res = Query.checkQueries(value, queries)
+        if res is not None:
+            detection = data["detection"]
+            alert = {
+                "sensorName": detection["sensorName"],
+                "type": data["type"],
+                "value": value,
+                "unit": detection["unit"],
+                "timestamp": detection["timestamp"],
+                "query": {
+                    "name": res.name,
+                    "value": res.threshold,
+                },
+            }
+            requests.post(url=url + "/alerts", json=alert)
             log("Alert sent to the API gateway")
 
         data = raw_data.to_json_detection()
