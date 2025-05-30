@@ -13,7 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-REPO = "S-furi/er-climate-monitor-dsl"
+REPO = "ER-climate-monitor/er-climate-monitor-dsl"
 RELEASE_VERSION = "v0.2.6"
 JAR_NAME = f"sensorDsl-{RELEASE_VERSION}.jar"
 IMAGE_VERSION = "1.0.4"
